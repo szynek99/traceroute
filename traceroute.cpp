@@ -1,3 +1,4 @@
+//szymon_pielat 308859
 #include <iostream>
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
@@ -80,7 +81,7 @@ PACKETS ping(uint16_t ttl, int sockfd, uint16_t pid, string ip_addr)
         uint16_t seq = (ttl << 2) + i;
         send_packet(ip_addr, sockfd, ttl, pid, seq);
     }
-    long long time_begin = current_timestamp();
+    long long time_out = current_timestamp();
 
     while (recived_packets.amount < 3 && recived_packets.time < 1000000)
     {
@@ -111,7 +112,6 @@ PACKETS ping(uint16_t ttl, int sockfd, uint16_t pid, string ip_addr)
         {
             throw runtime_error("recvfrom");
         }
-
         long long time_came = current_timestamp();
         char sender_ip_str[20];
         inet_ntop(AF_INET, &(sender.sin_addr), sender_ip_str, sizeof(sender_ip_str));
@@ -124,25 +124,24 @@ PACKETS ping(uint16_t ttl, int sockfd, uint16_t pid, string ip_addr)
 
         if (icmp_header->icmp_type == ICMP_TIME_EXCEEDED)
         {
-            ssize_t inside_packet = ip_header_len + icmp_header_len;
-            ip_header = (struct ip *)(buffer + inside_packet);
-            ip_header_len = 4 * ip_header->ip_hl;
-            icmp_packet = buffer + inside_packet + ip_header_len;
+            ssize_t inside_packet_offset = ip_header_len + icmp_header_len;
+            ip_header = (struct ip *)(buffer + inside_packet_offset);
+            icmp_packet = buffer + inside_packet_offset + ip_header_len;
             icmp_header = (struct icmp *)icmp_packet;
         }
 
-        uint16_t id = icmp_header->icmp_hun.ih_idseq.icd_id;
-        uint16_t seq = icmp_header->icmp_hun.ih_idseq.icd_seq;
+        uint16_t p_id = icmp_header->icmp_hun.ih_idseq.icd_id;
+        uint16_t p_seq = icmp_header->icmp_hun.ih_idseq.icd_seq;
 
-        uint16_t order = seq >> 2;
+        uint16_t order = p_seq >> 2;
 
-        if (id == pid && order == ttl)
+        if (p_id == pid && order == ttl)
         {
             if (recived_packets.amount >= 1 && recived_packets.sender_addr[0].compare(sender_ip_str) == 0)
                 recived_packets.addr_unique = false;
             else
                 recived_packets.sender_addr[recived_packets.amount] = sender_ip_str;
-            recived_packets.time += time_came - time_begin;
+            recived_packets.time += time_came - time_out;
             recived_packets.amount++;
         }
     }
