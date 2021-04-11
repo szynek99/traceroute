@@ -9,7 +9,11 @@
 #include <arpa/inet.h>
 #include <bits/stdint-uintn.h>
 #include <string.h>
+
+#define TIME_WAIT 1000
+
 using namespace std;
+
 
 struct PACKETS
 {
@@ -83,7 +87,7 @@ PACKETS ping(uint16_t ttl, int sockfd, uint16_t pid, string ip_addr)
     }
     long long time_out = current_timestamp();
 
-    while (recived_packets.amount < 3 && recived_packets.time < 1000000)
+    while (recived_packets.amount < 3 && recived_packets.time < TIME_WAIT)
     {
         fd_set descriptors;
         FD_ZERO(&descriptors);
